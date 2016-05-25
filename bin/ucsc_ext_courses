@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# The command line Haml parser.
+
+$LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
+# require 'ap'
+require 'ucsc_ext_courses'
+require 'ucsc_ext_courses/exec'
+UcscExtCourses::Exec::Schedule.new(ARGV)
