@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Fetch courses from UCSC Ext }
   spec.description   = %q{Fetch courses from UCSC Ext }
-  spec.homepage      = "Fetch courses from UCSC Ext "
+  spec.homepage      = "http://course-plan.ucsc-ext.edu"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
