@@ -39,7 +39,7 @@ module UcscExtCourses
           http = Curl.get(OFFERING_API, {:CatalogID => cate_id, :startPosition => 0})
           doc = Nokogiri::HTML.parse(http.body_str)
           offering_and_section_ids = get_offering_and_section_ids(doc)
-          fetch_courses(offering_and_section_ids)          
+          fetch_courses(offering_and_section_ids)
         end
         export("courses")
       end
