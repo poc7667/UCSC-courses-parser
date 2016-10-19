@@ -13,52 +13,55 @@ require 'curb'
 require 'open-uri'
 require 'json'
 
+
+# Here are the WEB API involing to fetch course data
 OVERVIEW_API = "http://course.ucsc-extension.edu/modules/shop/offeringOverview.action"
 OFFERING_API = "http://course.ucsc-extension.edu/modules/shop/searchOfferings.action"
 DETAIL_API  = "http://course.ucsc-extension.edu/modules/shop/defaultSections.action"
 FULL_SCHEDULE_API = "http://course.ucsc-extension.edu/modules/shop/sectionSchedule.action"
 
+# To add new category, please do insert a new record here
 COURSES = [
-  #{id:"81", certificate_name:"Account Course Catalog"},
-  #{id:"82", certificate_name:"Accounting CPA Course Catalog"},
-  #{id:"85", certificate_name:"Administrative and Executive Assistants Course Catalog"},
-  #{id:"87", certificate_name:"Bioinformatics Course Catalog"},
-  #{id:"93", certificate_name:"Biotechnology Course Catalog"},
-  #{id:"89", certificate_name:"Business Administration Course Catalog"},
-  #{id:"86", certificate_name:"Certified Bookkeeping Course Catalog"},
-  #{id:"79", certificate_name:"Clinical Trials Course Catalog"},
+  {id:"81", certificate_name:"Account Course Catalog"},
+  {id:"82", certificate_name:"Accounting CPA Course Catalog"},
+  {id:"85", certificate_name:"Administrative and Executive Assistants Course Catalog"},
+  {id:"87", certificate_name:"Bioinformatics Course Catalog"},
+  {id:"93", certificate_name:"Biotechnology Course Catalog"},
+  {id:"89", certificate_name:"Business Administration Course Catalog"},
+  {id:"86", certificate_name:"Certified Bookkeeping Course Catalog"},
+  {id:"79", certificate_name:"Clinical Trials Course Catalog"},
   {id:"80", certificate_name:"Computer Programming Course Catalog"},
-  #{id:"97", certificate_name:"Credential Courses Catalog"},
+  {id:"97", certificate_name:"Credential Courses Catalog"},
   {id:"83", certificate_name:"Database and Data Analytics Course Catalog"},
-  #{id:"99", certificate_name:"Early Childhood Education Course Catalog"},
-  #{id:"113", certificate_name:"Early Childhood Education: Supervision &amp; Administration Course Catalog"},
-  #{id:"114", certificate_name:"Educational Therapy Course Catalog"},
-  #{id:"84", certificate_name:"Environmental Health and Safety Management Course Catalog"},
-  #{id:"88", certificate_name:"Embedded Systems Course Catalog"},
-  #{id:"91", certificate_name:"Personal Financial Planning Course Catalog"},
-  #{id:"111", certificate_name:"General Interest Science Course Catalog"},
-  #{id:"94", certificate_name:"Human Resources Management Course Catalog"},
-  #{id:"241", certificate_name:"Information Technology Course Catalog"},
-  #{id:"115", certificate_name:"Instructional Design and Delivery Course Catalog"},
+  {id:"99", certificate_name:"Early Childhood Education Course Catalog"},
+  {id:"113", certificate_name:"Early Childhood Education: Supervision &amp; Administration Course Catalog"},
+  {id:"114", certificate_name:"Educational Therapy Course Catalog"},
+  {id:"84", certificate_name:"Environmental Health and Safety Management Course Catalog"},
+  {id:"88", certificate_name:"Embedded Systems Course Catalog"},
+  {id:"91", certificate_name:"Personal Financial Planning Course Catalog"},
+  {id:"111", certificate_name:"General Interest Science Course Catalog"},
+  {id:"94", certificate_name:"Human Resources Management Course Catalog"},
+  {id:"241", certificate_name:"Information Technology Course Catalog"},
+  {id:"115", certificate_name:"Instructional Design and Delivery Course Catalog"},
   {id:"95", certificate_name:"Internet Programming and Development Course Catalog"},
-  #{id:"101", certificate_name:"Legal Studies Course Catalog"},
-  #{id:"98", certificate_name:"Linux Programming and Administration Course Catalog"},
-  #{id:"102", certificate_name:"Marketing Course Catalog"},
-  #{id:"110", certificate_name:"MBA Prerequisite Course Catalog"},
-  #{id:"104", certificate_name:"MCLE courses"},
-  #{id:"112", certificate_name:"Medical Devices Course Catalog"},
+  {id:"101", certificate_name:"Legal Studies Course Catalog"},
+  {id:"98", certificate_name:"Linux Programming and Administration Course Catalog"},
+  {id:"102", certificate_name:"Marketing Course Catalog"},
+  {id:"110", certificate_name:"MBA Prerequisite Course Catalog"},
+  {id:"104", certificate_name:"MCLE courses"},
+  {id:"112", certificate_name:"Medical Devices Course Catalog"},
   {id:"322", certificate_name:"Mobile Application Development Course Catalog (Professional Award)"},
-  #{id:"344", certificate_name:"Pre-Health Professions"},
-  #{id:"105", certificate_name:"Project and Program Management Course Catalog"},
-  #{id:"78", certificate_name:"Regulatory Affairs Course Catalog"},
-  #{id:"107", certificate_name:"Software Engineering and Quality Course Catalog"},
-  #{id:"290", certificate_name:"List of special offerings"},
-  #{id:"108", certificate_name:"Technical Writing Course Catalog"},
-  #{id:"117", certificate_name:"Teaching English to Speakers of Other Languages Course Catalog"},
-  #{id:"118", certificate_name:"VLSI Engineering Course Catalog"},
-  #{id:"119", certificate_name:"Web and Interactive Media Design Course Catalog"},
+  {id:"344", certificate_name:"Pre-Health Professions"},
+  {id:"105", certificate_name:"Project and Program Management Course Catalog"},
+  {id:"78", certificate_name:"Regulatory Affairs Course Catalog"},
+  {id:"107", certificate_name:"Software Engineering and Quality Course Catalog"},
+  {id:"290", certificate_name:"List of special offerings"},
+  {id:"108", certificate_name:"Technical Writing Course Catalog"},
+  {id:"117", certificate_name:"Teaching English to Speakers of Other Languages Course Catalog"},
+  {id:"118", certificate_name:"VLSI Engineering Course Catalog"},
+  {id:"119", certificate_name:"Web and Interactive Media Design Course Catalog"},
 ]
-# curl ''  --data '&id=80&startPosition=0&pageSize=100' --compressed
+
 module UcscExtCourses
   module Exec
 
@@ -109,16 +112,22 @@ module UcscExtCourses
         req = Curl.get(OVERVIEW_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })
         doc = Nokogiri::XML.parse(req.body_str)
         @course = @course.merge({
-                  course_name: doc.search("Name").text.gsub("Prerequisite(s):","").gsub("Pre-Requisites",""),
+                  course_name: formalize_course_name(doc),
                   course_id: doc.search("CourseID").text,
                   # description: doc.search("Description").text,
                 })
       end
 
+      def formalize_course_name(doc)
+        doc.search("Name").text
+          .gsub("Prerequisite(s):","")
+          .gsub("Pre-Requisites","")
+      end
+
       def _get_schedules
         req = Curl.get(FULL_SCHEDULE_API, {:SectionID=> @sectionid })
         doc = Nokogiri::XML.parse(req.body_str)
-        schedules = doc.search("//Meeting").collect do |meeting|          
+        schedules = doc.search("//Meeting").collect do |meeting|
           {
             name: meeting.search("Name").text,
             start_date: meeting.search("StartDate").text,
