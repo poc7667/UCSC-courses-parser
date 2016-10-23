@@ -120,8 +120,15 @@ module UcscExtCourses
 
       def formalize_course_name(doc)
         doc.search("Name").text
-          .gsub("Prerequisite(s):","")
-          .gsub("Pre-Requisites","")
+            .gsub(/Prerequisite(s):/i,"")
+            .gsub(/Prerequiste(s):/i,"")
+            .gsub(/Prerequisite:/i, "")
+            .gsub(/Pre-Requisites/i,"")
+            .gsub("Prerequisite(s)","")
+            .gsub("Prerequiste(s):","")
+            .gsub(/Pre-Requisites/i,"")
+            .gsub(/Pre-Requisite/i,"")
+            .gsub(/Prerequisites/i,"")
       end
 
       def _get_schedules
