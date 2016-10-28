@@ -101,7 +101,7 @@ module UcscExtCourses
           @course = {}
           @course["cate_name"] = @cate_name
           _get_overview
-          _get_deatil
+          _get_course_detail
           _get_schedules
           pp(@course)
           @courses << @course
@@ -109,12 +109,12 @@ module UcscExtCourses
       end
 
       def _get_overview
-        req = Curl.get(OVERVIEW_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })
+        req = Curl.get(OVERVIEW_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })        
         doc = Nokogiri::XML.parse(req.body_str)
         @course = @course.merge({
                   course_name: formalize_course_name(doc),
                   course_id: doc.search("CourseID").text,
-                  # description: doc.search("Description").text,
+                  description: doc.search("Description").text,
                 })
       end
 
@@ -147,7 +147,7 @@ module UcscExtCourses
         })
       end
 
-      def _get_deatil
+      def _get_course_detail
         req = Curl.get(DETAIL_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })
         doc = Nokogiri::XML.parse(req.body_str)
         begin
@@ -166,10 +166,11 @@ module UcscExtCourses
           tuition_cost: doc.search("Cost").text.to_f,
           site_name: doc.search("SiteName").text,
           section_id: doc.search("SeatGroup//SectionID").text,
+          offering_code: @offeringid,
+          section_description: CGI::unescapeHTML(doc.search("//Description").text),
+          instructor_name: doc.search("Instructors/Instructor/InstructorName").text
         }.merge(date_items)
-
         @course = @course.merge(detail_course)
-
       end
 
       def export(name)
