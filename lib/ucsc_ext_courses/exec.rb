@@ -13,11 +13,14 @@ require 'curb'
 require 'open-uri'
 require 'json'
 
+
+# Here are the WEB API involing to fetch course data
 OVERVIEW_API = "http://course.ucsc-extension.edu/modules/shop/offeringOverview.action"
 OFFERING_API = "http://course.ucsc-extension.edu/modules/shop/searchOfferings.action"
 DETAIL_API  = "http://course.ucsc-extension.edu/modules/shop/defaultSections.action"
 FULL_SCHEDULE_API = "http://course.ucsc-extension.edu/modules/shop/sectionSchedule.action"
 
+# To add new category, please do insert a new record here
 COURSES = [
   # {id:"81", certificate_name:"Account Course Catalog"},
   # {id:"82", certificate_name:"Accounting CPA Course Catalog"},
@@ -58,7 +61,7 @@ COURSES = [
   # {id:"118", certificate_name:"VLSI Engineering Course Catalog"},
   # {id:"119", certificate_name:"Web and Interactive Media Design Course Catalog"},
 ]
-# curl ''  --data '&id=80&startPosition=0&pageSize=100' --compressed
+
 module UcscExtCourses
   module Exec
 
@@ -98,7 +101,7 @@ module UcscExtCourses
           @course = {}
           @course["cate_name"] = @cate_name
           _get_overview
-          _get_deatil
+          _get_course_detail
           _get_schedules
           pp(@course)
           @courses << @course
@@ -106,13 +109,26 @@ module UcscExtCourses
       end
 
       def _get_overview
-        req = Curl.get(OVERVIEW_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })
+        req = Curl.get(OVERVIEW_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })        
         doc = Nokogiri::XML.parse(req.body_str)
         @course = @course.merge({
-                  course_name: doc.search("Name").text.gsub("Prerequisite(s):",""),
+                  course_name: formalize_course_name(doc),
                   course_id: doc.search("CourseID").text,
-                  # description: doc.search("Description").text,
+                  description: doc.search("Description").text,
                 })
+      end
+
+      def formalize_course_name(doc)
+        doc.search("Name").text
+            .gsub(/Prerequisite(s):/i,"")
+            .gsub(/Prerequiste(s):/i,"")
+            .gsub(/Prerequisite:/i, "")
+            .gsub(/Pre-Requisites/i,"")
+            .gsub("Prerequisite(s)","")
+            .gsub("Prerequiste(s):","")
+            .gsub(/Pre-Requisites/i,"")
+            .gsub(/Pre-Requisite/i,"")
+            .gsub(/Prerequisites/i,"")
       end
 
       def _get_schedules
@@ -131,7 +147,7 @@ module UcscExtCourses
         })
       end
 
-      def _get_deatil
+      def _get_course_detail
         req = Curl.get(DETAIL_API, {:OfferingID=> @offeringid, :SectionID=> @sectionid })
         doc = Nokogiri::XML.parse(req.body_str)
         begin
@@ -150,10 +166,11 @@ module UcscExtCourses
           tuition_cost: doc.search("Cost").text.to_f,
           site_name: doc.search("SiteName").text,
           section_id: doc.search("SeatGroup//SectionID").text,
+          offering_code: @offeringid,
+          section_description: CGI::unescapeHTML(doc.search("//Description").text),
+          instructor_name: doc.search("Instructors/Instructor/InstructorName").text
         }.merge(date_items)
-
         @course = @course.merge(detail_course)
-
       end
 
       def export(name)
